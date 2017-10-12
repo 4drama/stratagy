@@ -30,13 +30,20 @@ private:
 	int health;
 	Order *porder;
 	double attackRange;
+	double visibilityRange;
 	
 public:
 	INFO Attack(Object *target);
 	INFO Move(Point target);
+	Object* FindEnemy();
 	
-	double gatRange(){
+	
+	double gatAttackRange(){
 		return attackRange;
+	}
+	
+	double gatVisibilityRange(){
+		return visibilityRange;
 	}
 }
 
