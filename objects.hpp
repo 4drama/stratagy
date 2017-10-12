@@ -2,9 +2,10 @@
 #define OBJECTS__
 
 #include "geometry.hpp"
+#include "orders.hpp"
 
 class Object{
-	using geometry::Point Point;
+	using Point = geometry::Point;
 	
 private:	
 	Point coordinate;
@@ -19,16 +20,18 @@ public:
 	
 };
 
-#include "orders.hpp"
 
-class Order;
-enum class INFO;
+namespace order{
+	class Order;	
+	enum class INFO;	
+}
 
 class Unit : public Object{
-using order::Order Order;
+using Point = geometry::Point;
+using INFO = order::INFO;
 private:
 	int health;
-	Order *porder;
+	order::Order *porder;
 	double attackRange;
 	double visibilityRange;
 	
@@ -45,6 +48,6 @@ public:
 	double gatVisibilityRange(){
 		return visibilityRange;
 	}
-}
+};
 
 #endif

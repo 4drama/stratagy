@@ -4,6 +4,9 @@
 #include "geometry.hpp"
 #include "objects.hpp"
 
+class Object;
+class Unit;
+
 namespace order{
 
 	enum class INFO{
@@ -12,171 +15,79 @@ namespace order{
 		IMPOSSIBLY
 	};
 	
-	class Object;
-	class Unit;
-	
 	struct Attributes{
-		using geometry::Point Point;
+		using Point = geometry::Point;
 		Point firstPosition;
 		Point secondPosition;
 		Object *target;
 	};
 
 	class Order{
-	private:
-		Order() = delete;
+	protected:
+		Order(){
+			
+		};
 	//	Order(const Attributes& entry);
 		
-		virtual INFO Do(Unit *current);
+		virtual INFO Do(Unit *current) = 0;
 		
-		~Order() = 0;
+	//	virtual ~Order() = 0;
 	};
 
 	class Attack : public Order{
 	private:
 		Object *target;
 	public:
-		Attack(const Attributes&& entry)
-				: target(entry.target){
-		}
+		Attack(const Attributes&& entry);
 	
-		INFO Do(Unit *current) override{
-			double distance = geometry::Range(	current->CoordinateGet(), 
-												target->CoordinateGet());
-			
-			INFO status;
-			
-			if(	distance < current->gatAttackRange()){
-				status = current->Attack(target);
-				
-				if(status == INFO::IS_DONE){
-					Object *enemy = current->FindEnemy();
-					if(enemy == nullptr)
-						return INFO::IS_DONE;
-					
-					distance = geometry::Range(	current->CoordinateGet(), 
-												enemy->CoordinateGet());
-					
-					if(distance <= current.gatVisibilityRange()){
-						target = enemy;
-						return INFO::EXERCISE;
-					} else 
-						return INFO::IS_DONE;
-				}
-			} else {
-				status = current->Move(target->CoordinateGet());
-				if(status == INFO::IMPOSSIBLY)
-					return INFO::IMPOSSIBLY;
-				else
-					return INFO::EXERCISE;
-			}
-		}
+		INFO Do(Unit *current) override;
 	};
 	
 	class Hold : public Order{
-		using geometry::Point Point;
+		using Point = geometry::Point;
 	private:
 		Point position;
 		
 	public:
-		Hold(const Attributes&& entry)
-				: position(entry.firstPosition){
-		}
+		Hold(const Attributes&& entry);
 		
-		INFO Do(Unit *current) override{
-			Object* enemy = current->FindEnemy();
-			
-			if(enemy == nullptr)
-				return INFO::EXERCISE;
-			
-			double distance = geometry::Range(	current->CoordinateGet(), 
-												target->CoordinateGet())
-			
-			if(	distance < current->gatAttackRange()){
-				current->Attack(enemy);
-				return INFO::EXERCISE;
-			} else
-				return INFO::EXERCISE;	
-		}
+		INFO Do(Unit *current) override;
 	};
 
 	class Move : public Order{
-		using geometry::Point Point;
+		using Point = geometry::Point;
 	private:
 		Point position;
 		
 	public:
-		Move(const Attributes&& entry)
-				: position(entry.firstPosition){
-		}
+		Move(const Attributes&& entry);
 		
-		INFO Do(Unit *current) override{
-			if(position == current->CoordinateGet())
-				return INFO::IS_DONE;
-			else {
-				INFO status = current->Move(position);
-				
-				if(status == INFO::IMPOSSIBLY)
-					return INFO::IMPOSSIBLY;
-				else
-					return INFO::EXERCISE;
-				
-			//	return status == INFO::IMPOSSIBLY ? 
-			//			INFO::IMPOSSIBLY : INFO::EXERCISE;
-			}
-		}
+		INFO Do(Unit *current) override;
 	};
 
 	class Follow : public Order{
 	private:
 		Object *target;
 	public:
-		Follow(const Attributes&& entry)
-				: target(entry.target){
-		}
+		Follow(const Attributes&& entry);
 		
-		INFO Do(Unit *current) override{
-			INFO status = current->Move(position);
-			
-			if(status == INFO::IMPOSSIBLY)
-				return INFO::IMPOSSIBLY;
-			else
-				return INFO::EXERCISE;
-		}
+		INFO Do(Unit *current) override;
 	};
 	
 	class Patrol : public Order{
-		using geometry::Point Point;
+		using Point = geometry::Point;
 	private:
 		Point firstPosition;
 		Point secondPosition;
 		
 		Point *currentPosition;
 		
-		void swapPosition(){
-			if(*currentPosition == firstPosition)
-					*currentPosition = secondPosition;
-				else
-					*currentPosition = firstPosition;
-		}
+		void swapPosition();
 		
 	public:
-		Patrol(const Attributes&& entry)
-				:	firstPosition(entry.firstPosition), 
-					secondPosition(entry.secondPosition){
-			currentPosition = &firstPosition;
-		}
+		Patrol(const Attributes&& entry);
 		
-		INFO Do(Unit *current) override{
-			INFO status = current->Move(*currentPosition);
-			if(status == INFO::IS_DONE){	
-				this->swapPosition();
-				return INFO::EXERCISE;	
-			} else if(status == INFO::IMPOSSIBLY)	
-				return INFO::IMPOSSIBLY;	
-			else 
-				return INFO::EXERCISE;
-		}
+		INFO Do(Unit *current) override;
 	};
 	
 }
