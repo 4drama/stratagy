@@ -1,4 +1,4 @@
-#include "objects.hpp"
+#include "base_objects.hpp"
 
 Object::Object(Point coordinate_)
 		: coordinate(coordinate_){	

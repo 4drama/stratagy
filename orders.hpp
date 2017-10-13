@@ -2,17 +2,23 @@
 #define ORDERS__
 
 #include "geometry.hpp"
-#include "objects.hpp"
+#include "base_objects.hpp"
+#include "order_info.hpp"
 
 class Object;
-class Unit;
 
 namespace order{
-
-	enum class INFO{
-		IS_DONE,
-		EXERCISE,
-		IMPOSSIBLY
+	
+	class Order;
+	
+	class Subordinate : virtual public Object{
+		using Point = geometry::Point;
+	private:
+		Order *porder;
+		
+	public:
+		
+		virtual ~Subordinate() = default;
 	};
 	
 	struct Attributes{
@@ -29,7 +35,7 @@ namespace order{
 		};
 	//	Order(const Attributes& entry);
 		
-		virtual INFO Do(Unit *current) = 0;
+		virtual INFO Check(Subordinate *current) = 0;
 		
 	//	virtual ~Order() = 0;
 	};
@@ -40,7 +46,7 @@ namespace order{
 	public:
 		Attack(const Attributes&& entry);
 	
-		INFO Do(Unit *current) override;
+		order::INFO Check(Subordinate *current) override;
 	};
 	
 	class Hold : public Order{
@@ -51,7 +57,7 @@ namespace order{
 	public:
 		Hold(const Attributes&& entry);
 		
-		INFO Do(Unit *current) override;
+		INFO Check(Subordinate *current) override;
 	};
 
 	class Move : public Order{
@@ -62,7 +68,7 @@ namespace order{
 	public:
 		Move(const Attributes&& entry);
 		
-		INFO Do(Unit *current) override;
+		INFO Check(Subordinate *current) override;
 	};
 
 	class Follow : public Order{
@@ -71,7 +77,7 @@ namespace order{
 	public:
 		Follow(const Attributes&& entry);
 		
-		INFO Do(Unit *current) override;
+		INFO Check(Subordinate *current) override;
 	};
 	
 	class Patrol : public Order{
@@ -87,7 +93,7 @@ namespace order{
 	public:
 		Patrol(const Attributes&& entry);
 		
-		INFO Do(Unit *current) override;
+		INFO Check(Subordinate *current) override;
 	};
 	
 }
