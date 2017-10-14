@@ -27,6 +27,8 @@ public:
 	double gatVisibilityRange(){
 		return visibilityRange;
 	}
+	
+	Object* FindEnemy();
 };
 
 class Able_to_move : virtual public Object, virtual public Able_to_see{
@@ -45,16 +47,6 @@ public:
 	}
 	
 	order::INFO Attack(Object *target);
-	Object* FindEnemy();
 };
-
-/*
-class Unit : public Object{
-private:
-	int health;
-	
-public:
-	
-};*/
 
 #endif

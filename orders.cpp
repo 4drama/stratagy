@@ -1,6 +1,146 @@
 #include "orders.hpp"
+#include <stdexcept>
+#include <cassert>
+#include <string>
 
 namespace order{
+	
+	namespace{
+		enum class STATUS{
+			NOT_ATTACKER,
+			OUT_OF_DISTANCE,
+			TARGET_ATTACK,
+			CANT_MOVE,
+			CAN_MOVE
+		};
+		
+		order::STATUS TryMove(Subordinate *current, geometry::Point position){
+			Able_to_move *pedestrian = dynamic_cast<Able_to_move*>(current);
+			if(pedestrian != nullptr){
+				order::INFO status = pedestrian->Move(position);
+				if(status == order::INFO::IMPOSSIBLY)
+					return order::STATUS::OUT_OF_DISTANCE;
+				else
+					return order::STATUS::CAN_MOVE;
+			} else 
+				return order::STATUS::CANT_MOVE;
+		}
+		
+		
+		order::STATUS TryAttack(Subordinate *current, Object *target){
+			Able_to_attack *attacker = dynamic_cast<Able_to_attack*>(current);
+			if(attacker != nullptr){
+				double distance = geometry::Range(	attacker->CoordinateGet(), 
+													target->CoordinateGet());
+				
+				if(distance < attacker->gatAttackRange()){
+					order::INFO statusInfo = attacker->Attack(target);
+					if(statusInfo == order::INFO::EXERCISE)
+						return order::STATUS::TARGET_ATTACK;
+					else if (statusInfo == order::INFO::IMPOSSIBLY)	
+						return order::STATUS::OUT_OF_DISTANCE;
+					else if(statusInfo == order::INFO::IS_DONE)
+						return order::STATUS::OUT_OF_DISTANCE;
+					else{
+						std::string error_text = 	"ERROR::orders.cpp ";
+						error_text += 				"TryAttack - statusInfo ";
+						error_text +=				"unexpected value";
+						throw std::logic_error(error_text);
+					}
+				} else 
+					return order::STATUS::OUT_OF_DISTANCE;
+			} else 
+				return order::STATUS::NOT_ATTACKER; 
+		}
+	}
+	
+	Default::Default(const Attributes&& entry)
+				: position(entry.firstPosition){
+		
+	}
+	
+	namespace{
+		order::STATUS DefaultPosCheck(	Able_to_move		*current,
+										geometry::Point 	originalPosition,
+										geometry::Point 	targetPosition){			
+			double currDistance = geometry::Range(	originalPosition, 
+													targetPosition);
+			double maxDistance = current->gatVisibilityRange();
+			if(maxDistance > currDistance)
+				return order::STATUS::CAN_MOVE;
+			else 
+				return order::STATUS::OUT_OF_DISTANCE;
+		}
+	}
+	
+	INFO Default::Check(Subordinate *current){
+		if(Able_to_see *caretaker = dynamic_cast<Able_to_see*>(current)){
+			Object *enemy = caretaker->FindEnemy();
+			if(enemy != nullptr){
+				
+				order::STATUS status = TryAttack(current, enemy);
+				
+				if(		(status == order::STATUS::NOT_ATTACKER) 	||	
+						(status == order::STATUS::TARGET_ATTACK)	)
+					return order::INFO::EXERCISE;
+					
+				else if(status == order::STATUS::OUT_OF_DISTANCE){
+					status = TryMove(current, enemy->CoordinateGet());
+					if(		(status == order::STATUS::CANT_MOVE)		||
+							(status == order::STATUS::OUT_OF_DISTANCE)	)
+						return order::INFO::EXERCISE;
+						
+					else if(status == order::STATUS::CAN_MOVE){
+						Able_to_move *pedestrian;
+						pedestrian = dynamic_cast<Able_to_move*>(current);
+
+						//in this branch current object must can move.
+						assert(pedestrian != nullptr);
+						
+						status = DefaultPosCheck(	pedestrian, this->position,
+													enemy->CoordinateGet());
+						if(status == order::STATUS::CAN_MOVE)
+							return order::INFO::EXERCISE;
+						else if(status == order::STATUS::OUT_OF_DISTANCE){
+							status = TryMove(current, this->position);
+							if(status == order::STATUS::CAN_MOVE)
+								return order::INFO::EXERCISE;
+							else if (status == order::STATUS::OUT_OF_DISTANCE){
+								this->position = current->CoordinateGet();
+								return order::INFO::EXERCISE;
+							} else{
+								std::string error_text;
+								error_text = 	"ERROR::orders.cpp ";
+								error_text += 	"Default::Check - TryMove: ";
+								error_text += 	"incorrect branch.";
+								throw std::logic_error(error_text);
+							}
+						} else {
+							std::string error_text;
+							error_text =  "ERROR::orders.cpp ";
+							error_text += "Default::Check - DefaultPosCheck: ";
+							error_text += "incorrect branch.";
+							throw std::logic_error(error_text);
+						}
+					} else {
+						std::string error_text;
+						error_text = 	"ERROR::orders.cpp ";
+						error_text += 	"Default::Check - TryMove: ";
+						error_text += 	"incorrect branch.";
+						throw std::logic_error(error_text);
+					}
+				} else {
+					std::string error_text;
+					error_text = 	"ERROR::orders.cpp ";
+					error_text += 	"Default::Check - TryAttack: ";
+					error_text +=	"incorrect branch.";
+					throw std::logic_error(error_text);
+				}
+			} else
+				return order::INFO::EXERCISE;
+		} else
+			return order::INFO::EXERCISE;
+	}
 	
 	Attack::Attack(const Attributes&& entry)
 				: target(entry.target){
@@ -30,9 +170,10 @@ namespace order{
 					} else 
 						return order::INFO::IS_DONE;
 				} else 
-					return order::INFO::EXERCISE;
+					return order::INFO::IS_DONE;
 			} else {
-				if(Able_to_move *pedestrian = dynamic_cast<Able_to_move*>(current)){
+				if(Able_to_move *pedestrian = 
+									dynamic_cast<Able_to_move*>(current)){
 					status = pedestrian->Move(pedestrian->CoordinateGet());
 					if(status == order::INFO::IMPOSSIBLY)
 						return order::INFO::IMPOSSIBLY;
@@ -42,8 +183,8 @@ namespace order{
 				else
 					return order::INFO::IMPOSSIBLY;
 			}
-		}
-		return order::INFO::IMPOSSIBLY;
+		} else
+			return order::INFO::IMPOSSIBLY;
 	}
 	
 	Hold::Hold(const Attributes&& entry)

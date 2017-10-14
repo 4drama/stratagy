@@ -5,6 +5,8 @@
 #include "base_objects.hpp"
 #include "order_info.hpp"
 
+#include <list>
+
 class Object;
 
 namespace order{
@@ -14,7 +16,7 @@ namespace order{
 	class Subordinate : virtual public Object{
 		using Point = geometry::Point;
 	private:
-		Order *porder;
+		std::list<Order> orders;
 		
 	public:
 		
@@ -39,6 +41,16 @@ namespace order{
 		
 	//	virtual ~Order() = 0;
 	};
+	
+	class Default : public Order{
+	private:
+		geometry::Point position;
+		
+	public:
+		Default(const Attributes&& entry);
+		
+		INFO Check(Subordinate *current) override;
+	};
 
 	class Attack : public Order{
 	private:
@@ -46,7 +58,7 @@ namespace order{
 	public:
 		Attack(const Attributes&& entry);
 	
-		order::INFO Check(Subordinate *current) override;
+		INFO Check(Subordinate *current) override;
 	};
 	
 	class Hold : public Order{
