@@ -1,10 +1,13 @@
 #include "orders.hpp"
+
 #include <stdexcept>
 #include <cassert>
 #include <string>
 
 namespace order{
-	
+
+
+//===========================SUPPORTING==============================
 	namespace{
 		enum class STATUS{
 			NOT_ATTACKER,
@@ -31,7 +34,7 @@ namespace order{
 			Able_to_attack *attacker = dynamic_cast<Able_to_attack*>(current);
 			if(attacker != nullptr){
 				double distance = geometry::Range(	attacker->CoordinateGet(), 
-													target->CoordinateGet());
+									target->CoordinateGet());
 				
 				if(distance < attacker->gatAttackRange()){
 					order::INFO statusInfo = attacker->Attack(target);
@@ -42,9 +45,9 @@ namespace order{
 					else if(statusInfo == order::INFO::IS_DONE)
 						return order::STATUS::OUT_OF_DISTANCE;
 					else{
-						std::string error_text = 	"ERROR::orders.cpp ";
-						error_text += 				"TryAttack - statusInfo ";
-						error_text +=				"unexpected value";
+						std::string error_text = "ERROR::orders.cpp ";
+						error_text += 		"TryAttack - statusInfo ";
+						error_text +=		"unexpected value";
 						throw std::logic_error(error_text);
 					}
 				} else 
@@ -53,18 +56,62 @@ namespace order{
 				return order::STATUS::NOT_ATTACKER; 
 		}
 	}
+//-------------------------------------------------------------------
+
+//===========================SUBORDINATE_CLASS=======================	
+	std::list<Subordinate::Order_ptr> Subordinate::CreateDefault(){
+		typedef Subordinate::Order_ptr Order_ptr;
+		std::list<Order_ptr> new_;
+		Attributes setting;
+		setting.firstPosition = this->CoordinateGet();
+		Order_ptr order = std::make_unique<Default>(std::move(setting));
+		new_.push_front(std::move(order));
+		return new_;
+	}
 	
+	Subordinate::Subordinate(geometry::Point objectPosition)
+			:	Object(objectPosition){
+		this->orders = CreateDefault();
+	}
+	
+	void Subordinate::AddOrder(Order_ptr &&next){
+		this->orders.push_front(std::move(next));
+	}
+	
+	void Subordinate::NewOrders(Order_ptr &&new_){
+		this->orders = CreateDefault();
+		this->AddOrder(std::move(new_));
+	}
+	
+	void Subordinate::ResetOrders(){
+		this->orders = CreateDefault();
+	}
+	
+	void Subordinate::Update(){
+		order::INFO status;
+		do{
+			status = this->orders.front()->Check(this);
+			if(		(status == order::INFO::IS_DONE) 	||
+					(status == order::INFO::IMPOSSIBLY)	){
+				this->orders.pop_front();
+			} else 
+				return;
+		} while (status == order::INFO::EXERCISE);
+	}
+//-------------------------------------------------------------------
+
+//===========================DEFAULT_ORDER_CLASS=====================
 	Default::Default(const Attributes&& entry)
 				: position(entry.firstPosition){
 		
 	}
 	
 	namespace{
-		order::STATUS DefaultPosCheck(	Able_to_move		*current,
-										geometry::Point 	originalPosition,
-										geometry::Point 	targetPosition){			
+		order::STATUS DefaultPosCheck(		Able_to_move	*current,
+							geometry::Point originalPosition,
+							geometry::Point targetPosition){			
 			double currDistance = geometry::Range(	originalPosition, 
-													targetPosition);
+									targetPosition);
 			double maxDistance = current->gatVisibilityRange();
 			if(maxDistance > currDistance)
 				return order::STATUS::CAN_MOVE;
@@ -86,8 +133,8 @@ namespace order{
 					
 				else if(status == order::STATUS::OUT_OF_DISTANCE){
 					status = TryMove(current, enemy->CoordinateGet());
-					if(		(status == order::STATUS::CANT_MOVE)		||
-							(status == order::STATUS::OUT_OF_DISTANCE)	)
+					if(		(status == order::STATUS::CANT_MOVE)	||
+							(status == order::STATUS::OUT_OF_DISTANCE))
 						return order::INFO::EXERCISE;
 						
 					else if(status == order::STATUS::CAN_MOVE){
@@ -97,8 +144,8 @@ namespace order{
 						//in this branch current object must can move.
 						assert(pedestrian != nullptr);
 						
-						status = DefaultPosCheck(	pedestrian, this->position,
-													enemy->CoordinateGet());
+						status = DefaultPosCheck(pedestrian, this->position,
+									enemy->CoordinateGet());
 						if(status == order::STATUS::CAN_MOVE)
 							return order::INFO::EXERCISE;
 						else if(status == order::STATUS::OUT_OF_DISTANCE){
@@ -111,8 +158,8 @@ namespace order{
 							} else{
 								std::string error_text;
 								error_text = 	"ERROR::orders.cpp ";
-								error_text += 	"Default::Check - TryMove: ";
-								error_text += 	"incorrect branch.";
+								error_text += "Default::Check - TryMove: ";
+								error_text += "incorrect branch.";
 								throw std::logic_error(error_text);
 							}
 						} else {
@@ -141,7 +188,9 @@ namespace order{
 		} else
 			return order::INFO::EXERCISE;
 	}
-	
+//-------------------------------------------------------------------
+
+//===========================ATTACK_ORDER_CLASS======================	
 	Attack::Attack(const Attributes&& entry)
 				: target(entry.target){
 	}
@@ -149,7 +198,7 @@ namespace order{
 	order::INFO Attack::Check(Subordinate *current){
 		if(Able_to_attack *attacker = dynamic_cast<Able_to_attack*>(current)){
 			double distance = geometry::Range(	attacker->CoordinateGet(), 
-												target->CoordinateGet());
+								target->CoordinateGet());
 			
 			order::INFO status;
 			
@@ -162,7 +211,7 @@ namespace order{
 						return order::INFO::IS_DONE;
 					
 					distance = geometry::Range(	attacker->CoordinateGet(), 
-												enemy->CoordinateGet());
+									enemy->CoordinateGet());
 					
 					if(distance <= attacker->gatVisibilityRange()){
 						target = enemy;
@@ -172,8 +221,7 @@ namespace order{
 				} else 
 					return order::INFO::IS_DONE;
 			} else {
-				if(Able_to_move *pedestrian = 
-									dynamic_cast<Able_to_move*>(current)){
+				if(Able_to_move *pedestrian = dynamic_cast<Able_to_move*>(current)){
 					status = pedestrian->Move(pedestrian->CoordinateGet());
 					if(status == order::INFO::IMPOSSIBLY)
 						return order::INFO::IMPOSSIBLY;
@@ -186,9 +234,11 @@ namespace order{
 		} else
 			return order::INFO::IMPOSSIBLY;
 	}
-	
+//-------------------------------------------------------------------
+
+//===========================HOLD_ORDER_CLASS========================	
 	Hold::Hold(const Attributes&& entry)
-				: position(entry.firstPosition){
+			: 	position(entry.firstPosition){
 	}
 	
 	order::INFO Hold::Check(Subordinate *current){
@@ -198,7 +248,7 @@ namespace order{
 				return order::INFO::EXERCISE;
 		
 			double distance = geometry::Range(	attacker->CoordinateGet(), 
-												enemy->CoordinateGet());
+								enemy->CoordinateGet());
 			
 			if(	distance < attacker->gatAttackRange()){
 				attacker->Attack(enemy);
@@ -208,9 +258,11 @@ namespace order{
 		} else
 			return order::INFO::EXERCISE;
 	}
-	
+//-------------------------------------------------------------------
+
+//===========================MOVE_ORDER_CLASS========================	
 	Move::Move(const Attributes&& entry)
-			: position(entry.firstPosition){
+			:	 position(entry.firstPosition){
 	}
 	
 	order::INFO Move::Check(Subordinate *current){
@@ -228,9 +280,11 @@ namespace order{
 		} else 
 			return order::INFO::IMPOSSIBLY;
 	}
-	
+//-------------------------------------------------------------------
+
+//===========================FOLLOW_ORDER_CLASS======================	
 	Follow::Follow(const Attributes&& entry)
-			: target(entry.target){
+			: 	target(entry.target){
 	}
 	
 	order::INFO Follow::Check(Subordinate *current){
@@ -251,7 +305,9 @@ namespace order{
 			else
 				*currentPosition = firstPosition;
 	}
-	
+//-------------------------------------------------------------------
+
+//===========================PATROL_ORDER_CLASS======================	
 	Patrol::Patrol(const Attributes&& entry)
 			:	firstPosition(entry.firstPosition), 
 				secondPosition(entry.secondPosition){
@@ -271,5 +327,6 @@ namespace order{
 		} else 
 			return order::INFO::IMPOSSIBLY;
 	}
+//-------------------------------------------------------------------
 	
 }

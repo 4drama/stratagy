@@ -6,6 +6,7 @@
 #include "order_info.hpp"
 
 #include <list>
+#include <memory>
 
 class Object;
 
@@ -14,11 +15,23 @@ namespace order{
 	class Order;
 	
 	class Subordinate : virtual public Object{
-		using Point = geometry::Point;
+		using Order_ptr = std::unique_ptr<Order>;
 	private:
-		std::list<Order> orders;
+		std::list<Order_ptr> orders;
 		
+		std::list<Order_ptr> CreateDefault();
+		void ReplaceOrders(std::list<Order_ptr> &&new_);
 	public:
+		Subordinate() = delete;
+		Subordinate(geometry::Point objectPosition);
+		Subordinate(const Subordinate&) = delete;
+		Subordinate(Subordinate&&) = default;
+		
+		void AddOrder(Order_ptr &&next);
+		void NewOrders(Order_ptr &&new_);
+		void ResetOrders();
+		
+		void Update();
 		
 		virtual ~Subordinate() = default;
 	};
@@ -32,14 +45,10 @@ namespace order{
 
 	class Order{
 	protected:
-		Order(){
-			
-		};
-	//	Order(const Attributes& entry);
-		
+		Order() = default;
+	public:	
 		virtual INFO Check(Subordinate *current) = 0;
 		
-	//	virtual ~Order() = 0;
 	};
 	
 	class Default : public Order{
