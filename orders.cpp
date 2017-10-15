@@ -88,15 +88,12 @@ namespace order{
 	}
 	
 	void Subordinate::Update(){
-		order::INFO status;
-		do{
+		order::INFO status = this->orders.front()->Check(this);
+		
+		while(status != order::INFO::EXERCISE){
+			this->orders.pop_front();
 			status = this->orders.front()->Check(this);
-			if(		(status == order::INFO::IS_DONE) 	||
-					(status == order::INFO::IMPOSSIBLY)	){
-				this->orders.pop_front();
-			} else 
-				return;
-		} while (status == order::INFO::EXERCISE);
+		}
 	}
 //-------------------------------------------------------------------
 
