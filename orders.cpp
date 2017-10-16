@@ -4,6 +4,9 @@
 #include <cassert>
 #include <string>
 
+#include <list>
+#include <memory>
+
 namespace order{
 
 
@@ -20,7 +23,7 @@ namespace order{
 		order::STATUS TryMove(Subordinate *current, geometry::Point position){
 			Able_to_move *pedestrian = dynamic_cast<Able_to_move*>(current);
 			if(pedestrian != nullptr){
-				order::INFO status = pedestrian->Move(position);
+				order::INFO status = pedestrian->MoveUpdate(position);
 				if(status == order::INFO::IMPOSSIBLY)
 					return order::STATUS::OUT_OF_DISTANCE;
 				else
@@ -30,14 +33,15 @@ namespace order{
 		}
 		
 		
-		order::STATUS TryAttack(Subordinate *current, Object *target){
+		order::STATUS TryAttack(	Subordinate *current,
+						std::shared_ptr<Destructible_object> target){
 			Able_to_attack *attacker = dynamic_cast<Able_to_attack*>(current);
 			if(attacker != nullptr){
 				double distance = geometry::Range(	attacker->CoordinateGet(), 
-									target->CoordinateGet());
+							target->getObject()->CoordinateGet());
 				
-				if(distance < attacker->gatAttackRange()){
-					order::INFO statusInfo = attacker->Attack(target);
+				if(distance < attacker->getAttackRange()){
+					order::INFO statusInfo = attacker->AttackUpdate(target);
 					if(statusInfo == order::INFO::EXERCISE)
 						return order::STATUS::TARGET_ATTACK;
 					else if (statusInfo == order::INFO::IMPOSSIBLY)	
@@ -109,7 +113,7 @@ namespace order{
 							geometry::Point targetPosition){			
 			double currDistance = geometry::Range(	originalPosition, 
 									targetPosition);
-			double maxDistance = current->gatVisibilityRange();
+			double maxDistance = current->getVisibilityRange();
 			if(maxDistance > currDistance)
 				return order::STATUS::CAN_MOVE;
 			else 
@@ -119,7 +123,7 @@ namespace order{
 	
 	INFO Default::Check(Subordinate *current){
 		if(Able_to_see *caretaker = dynamic_cast<Able_to_see*>(current)){
-			Object *enemy = caretaker->FindEnemy();
+			std::shared_ptr<Destructible_object> enemy = caretaker->FindEnemy();
 			if(enemy != nullptr){
 				
 				order::STATUS status = TryAttack(current, enemy);
@@ -129,7 +133,7 @@ namespace order{
 					return order::INFO::EXERCISE;
 					
 				else if(status == order::STATUS::OUT_OF_DISTANCE){
-					status = TryMove(current, enemy->CoordinateGet());
+					status = TryMove(current, enemy->getObject()->CoordinateGet());
 					if(		(status == order::STATUS::CANT_MOVE)	||
 							(status == order::STATUS::OUT_OF_DISTANCE))
 						return order::INFO::EXERCISE;
@@ -142,7 +146,7 @@ namespace order{
 						assert(pedestrian != nullptr);
 						
 						status = DefaultPosCheck(pedestrian, this->position,
-									enemy->CoordinateGet());
+								enemy->getObject()->CoordinateGet());
 						if(status == order::STATUS::CAN_MOVE)
 							return order::INFO::EXERCISE;
 						else if(status == order::STATUS::OUT_OF_DISTANCE){
@@ -195,22 +199,23 @@ namespace order{
 	order::INFO Attack::Check(Subordinate *current){
 		if(Able_to_attack *attacker = dynamic_cast<Able_to_attack*>(current)){
 			double distance = geometry::Range(	attacker->CoordinateGet(), 
-								target->CoordinateGet());
+								target->getObject()->CoordinateGet());
 			
 			order::INFO status;
 			
-			if(	distance < attacker->gatAttackRange()){
-				status = attacker->Attack(target);
+			if(	distance < attacker->getAttackRange()){
+				status = attacker->AttackUpdate(target);
 				
 				if(status == order::INFO::IS_DONE){
-					Object *enemy = attacker->FindEnemy();
+					std::shared_ptr<Destructible_object> enemy; 
+					enemy = attacker->FindEnemy();
 					if(enemy == nullptr)
 						return order::INFO::IS_DONE;
 					
 					distance = geometry::Range(	attacker->CoordinateGet(), 
-									enemy->CoordinateGet());
+								enemy->getObject()->CoordinateGet());
 					
-					if(distance <= attacker->gatVisibilityRange()){
+					if(distance <= attacker->getVisibilityRange()){
 						target = enemy;
 						return order::INFO::EXERCISE;
 					} else 
@@ -219,7 +224,7 @@ namespace order{
 					return order::INFO::IS_DONE;
 			} else {
 				if(Able_to_move *pedestrian = dynamic_cast<Able_to_move*>(current)){
-					status = pedestrian->Move(pedestrian->CoordinateGet());
+					status = pedestrian->MoveUpdate(pedestrian->CoordinateGet());
 					if(status == order::INFO::IMPOSSIBLY)
 						return order::INFO::IMPOSSIBLY;
 					else
@@ -240,15 +245,15 @@ namespace order{
 	
 	order::INFO Hold::Check(Subordinate *current){
 		if(Able_to_attack *attacker = dynamic_cast<Able_to_attack*>(current)){
-			Object* enemy = attacker->FindEnemy();
+			std::shared_ptr<Destructible_object> enemy = attacker->FindEnemy();
 			if(enemy == nullptr)
 				return order::INFO::EXERCISE;
 		
 			double distance = geometry::Range(	attacker->CoordinateGet(), 
-								enemy->CoordinateGet());
+								enemy->getObject()->CoordinateGet());
 			
-			if(	distance < attacker->gatAttackRange()){
-				attacker->Attack(enemy);
+			if(	distance < attacker->getAttackRange()){
+				attacker->AttackUpdate(enemy);
 				return order::INFO::EXERCISE;
 			} else
 				return order::INFO::EXERCISE;	
@@ -267,7 +272,7 @@ namespace order{
 			if(position == pedestrian->CoordinateGet())
 				return order::INFO::IS_DONE;
 			else {
-				order::INFO status = pedestrian->Move(position);
+				order::INFO status = pedestrian->MoveUpdate(position);
 				
 				if(status == order::INFO::IMPOSSIBLY)
 					return order::INFO::IMPOSSIBLY;
@@ -286,7 +291,8 @@ namespace order{
 	
 	order::INFO Follow::Check(Subordinate *current){
 		if(Able_to_move *pedestrian = dynamic_cast<Able_to_move*>(current)){
-			order::INFO status = pedestrian->Move(target->CoordinateGet());
+			order::INFO status;
+			status = pedestrian->MoveUpdate(target->getObject()->CoordinateGet());
 			
 			if(status == order::INFO::IMPOSSIBLY)
 				return order::INFO::IMPOSSIBLY;
@@ -313,7 +319,7 @@ namespace order{
 	
 	order::INFO Patrol::Check(Subordinate *current){
 		if(Able_to_move *pedestrian = dynamic_cast<Able_to_move*>(current)){
-			order::INFO status = pedestrian->Move(*currentPosition);
+			order::INFO status = pedestrian->MoveUpdate(*currentPosition);
 			if(status == order::INFO::IS_DONE){	
 				this->swapPosition();
 				return order::INFO::EXERCISE;	

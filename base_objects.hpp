@@ -4,49 +4,83 @@
 #include "geometry.hpp"
 #include "order_info.hpp"
 
+#include <memory>
+
 class Object{
-	using Point = geometry::Point;
-	
+	using Point = geometry::Point;	
 private:	
 	Point coordinate;
-	
 protected:
 	Object() = delete;
 	Object(Point coordinate_);
-
+	
 public:
 	Point CoordinateGet() const;
 	void CoordinateSet(Point newCoordinate);
 	
 };
 
+class Destructible_object;
+
+class Able_to_destroy : virtual public Object {
+private:
+	std::shared_ptr<Destructible_object> sharedObj;
+public:
+	Able_to_destroy() = delete;
+	Able_to_destroy(geometry::Point coordinate_);
+	
+	std::shared_ptr<Destructible_object> getSharedObject() const;
+	~Able_to_destroy();
+};
+
+class Destructible_object{
+private:
+	friend class Able_to_destroy;
+	Able_to_destroy *object;
+public:
+	Destructible_object() = delete;
+	Destructible_object(Able_to_destroy* object_);
+	
+	bool getLive() const;
+	Able_to_destroy* getObject() const;
+};
+
 class Able_to_see : virtual public Object {
 private:
 	double visibilityRange;
 public:
-	double gatVisibilityRange(){
-		return visibilityRange;
-	}
+	Able_to_see() = delete;
+	Able_to_see(double visibilityRange_, geometry::Point coordinate_);
 	
-	Object* FindEnemy();
+	double getVisibilityRange() const;
+	
+	std::shared_ptr<Destructible_object> FindEnemy() const;
 };
 
 class Able_to_move : virtual public Object, virtual public Able_to_see{
 private:
-	
+	double speed;
+	geometry::Point actionPosition;
 public:
-	order::INFO Move(geometry::Point target);
+	Able_to_move() = delete;
+	Able_to_move(double speed_, double visibilityRange_, geometry::Point coordinate_);
+	
+	double getSpeed() const;
+	
+	order::INFO MoveUpdate(geometry::Point target);
 };
 
 class Able_to_attack : virtual public Object, virtual public Able_to_see {
 private:
 	double attackRange;
+	std::shared_ptr<Destructible_object> actionTarget;
 public:
-	double gatAttackRange(){
-		return attackRange;
-	}
+	Able_to_attack() = delete;
+	Able_to_attack(double attackRange_, double visibilityRange_, geometry::Point coordinate_);
 	
-	order::INFO Attack(Object *target);
+	double getAttackRange() const;
+	
+	order::INFO AttackUpdate(std::shared_ptr<Destructible_object> target);
 };
 
 #endif

@@ -9,6 +9,7 @@
 #include <memory>
 
 class Object;
+class Destructible_object;
 
 namespace order{
 	
@@ -40,7 +41,7 @@ namespace order{
 		using Point = geometry::Point;
 		Point firstPosition;
 		Point secondPosition;
-		Object *target;
+		std::shared_ptr<Destructible_object> target;
 	};
 
 	class Order{
@@ -63,7 +64,7 @@ namespace order{
 
 	class Attack : public Order{
 	private:
-		Object *target;
+		std::shared_ptr<Destructible_object> target;
 	public:
 		Attack(const Attributes&& entry);
 	
@@ -94,7 +95,7 @@ namespace order{
 
 	class Follow : public Order{
 	private:
-		Object *target;
+		std::shared_ptr<Destructible_object> target;
 	public:
 		Follow(const Attributes&& entry);
 		
