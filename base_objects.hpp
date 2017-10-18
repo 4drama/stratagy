@@ -4,7 +4,11 @@
 #include "geometry.hpp"
 #include "order_info.hpp"
 
+#include <vector>
+#include <algorithm>
 #include <memory>
+#include <list>
+//#include <functional>
 
 class Object{
 	using Point = geometry::Point;	
@@ -17,7 +21,17 @@ protected:
 public:
 	Point CoordinateGet() const;
 	void CoordinateSet(Point newCoordinate);
+	virtual ~Object() = default;
+};
+
+class ObjectsRoster{
+private:
+	std::vector<std::unique_ptr<Object> > roster;
+public:
+
+	void Add(Object&& obj);
 	
+	};
 };
 
 class Destructible_object;
@@ -25,6 +39,7 @@ class Destructible_object;
 class Able_to_destroy : virtual public Object {
 private:
 	std::shared_ptr<Destructible_object> sharedObj;
+	int health;
 public:
 	Able_to_destroy() = delete;
 	Able_to_destroy(geometry::Point coordinate_);
@@ -47,10 +62,11 @@ public:
 
 class Able_to_see : virtual public Object {
 private:
+	ObjectsRoster *zone;
 	double visibilityRange;
 public:
 	Able_to_see() = delete;
-	Able_to_see(double visibilityRange_, geometry::Point coordinate_);
+	Able_to_see(ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_);
 	
 	double getVisibilityRange() const;
 	
@@ -63,7 +79,7 @@ private:
 	geometry::Point actionPosition;
 public:
 	Able_to_move() = delete;
-	Able_to_move(double speed_, double visibilityRange_, geometry::Point coordinate_);
+	Able_to_move(double speed_,ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_);
 	
 	double getSpeed() const;
 	
@@ -76,7 +92,7 @@ private:
 	std::shared_ptr<Destructible_object> actionTarget;
 public:
 	Able_to_attack() = delete;
-	Able_to_attack(double attackRange_, double visibilityRange_, geometry::Point coordinate_);
+	Able_to_attack(double attackRange_, ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_);
 	
 	double getAttackRange() const;
 	

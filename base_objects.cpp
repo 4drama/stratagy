@@ -8,6 +8,11 @@ geometry::Point Object::CoordinateGet() const{
 	return coordinate;
 }
 
+void ObjectsRoster::Add(Object&& obj){
+	std::unique_ptr<Object> objPtr = std::make_unique<Object>(std::move(obj));	
+	roster.push_back(std::move(objPtr));
+}
+
 Able_to_destroy::Able_to_destroy(geometry::Point coordinate_)
 		:	Object(coordinate_){	
 	sharedObj = std::make_shared<Destructible_object>(this);
@@ -37,8 +42,8 @@ void Object::CoordinateSet(Point newCoordinate){
 	coordinate = newCoordinate;
 }
 
-Able_to_see::Able_to_see(double visibilityRange_, geometry::Point coordinate_)
-		:	Object(coordinate_), visibilityRange(visibilityRange_){	
+Able_to_see::Able_to_see(ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_)
+		:	Object(coordinate_), zone(zone_), visibilityRange(visibilityRange_){	
 }
 
 double Able_to_see::getVisibilityRange() const{
@@ -49,9 +54,9 @@ std::shared_ptr<Destructible_object> Able_to_see::FindEnemy() const{
 	//TO DO
 }
 
-Able_to_move::Able_to_move(double speed_, double visibilityRange_, geometry::Point coordinate_)
+Able_to_move::Able_to_move(double speed_, ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_)
 		:	Object(coordinate_),
-			Able_to_see(visibilityRange_, coordinate_),
+			Able_to_see(zone_, visibilityRange_, coordinate_),
 			speed(speed_){
 }
 
@@ -63,9 +68,10 @@ order::INFO Able_to_move::MoveUpdate(geometry::Point target){
 	//TO DO
 }
 
-Able_to_attack::Able_to_attack(double attackRange_, double visibilityRange_, geometry::Point coordinate_)
+Able_to_attack::Able_to_attack(	double attackRange_, ObjectsRoster *zone_,
+				double visibilityRange_, geometry::Point coordinate_)
 		:	Object(coordinate_),
-			Able_to_see(visibilityRange_, coordinate_),
+			Able_to_see(zone_, visibilityRange_, coordinate_),
 			attackRange(attackRange_){	
 }
 

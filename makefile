@@ -1,7 +1,13 @@
 all: ord base
 
+geom:
+	make -f geometry.mak
+	
 ord:
 	make -f orders.mak
+	
+testord:
+	make -f ordertest.mak
 	
 base:
 	make -f base_objects.mak
@@ -9,3 +15,5 @@ base:
 clean:
 	make -f orders.mak clean
 	make -f base_objects.mak clean
+	make -f ordertest.mak clean
+	make -f geometry.mak clean
