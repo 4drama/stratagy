@@ -1,4 +1,6 @@
 #include "base_objects.hpp"
+#include <utility>
+#include <map>
 
 Object::Object(Point coordinate_)
 		:	coordinate(coordinate_){	
@@ -51,7 +53,22 @@ double Able_to_see::getVisibilityRange() const{
 }
 
 std::shared_ptr<Destructible_object> Able_to_see::FindEnemy() const{
-	//TO DO
+	std::map<double, std::shared_ptr<Destructible_object> > all;
+	//TO DO : NEED DIFFER ALLIED UNITS
+	auto procedure = [&all, this](const std::unique_ptr<Object> &other){
+		if(Able_to_destroy *current = dynamic_cast<Able_to_destroy*>(other.get())){
+			double range = geometry::Range(this->CoordinateGet(), current->CoordinateGet());
+			std::shared_ptr<Destructible_object> ptr = current->getSharedObject();
+			all[range] = ptr;
+			return;
+		} else
+			return;
+	};	
+	
+	zone->for_each(procedure);
+	auto nearest = all.lower_bound(0);
+	
+	return nearest->second;
 }
 
 Able_to_move::Able_to_move(double speed_, ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_)

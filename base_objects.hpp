@@ -7,8 +7,17 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
-#include <list>
-//#include <functional>
+
+class ObjectsRoster;
+
+struct ObjectAttributes{
+	geometry::Point coordinate;
+	int health;
+	ObjectsRoster *zone;
+	double visibilityRange;
+	double speed;
+	double attackRange;
+};
 
 class Object{
 	using Point = geometry::Point;	
@@ -30,8 +39,14 @@ private:
 public:
 
 	void Add(Object&& obj);
-	
-	};
+		
+	template<typename F>
+	void for_each(F&& fun) const{		
+		std::for_each(roster.begin(), roster.end(),[fun]
+		(const std::unique_ptr<Object> &obj){
+			fun(obj);
+		});
+	}
 };
 
 class Destructible_object;
