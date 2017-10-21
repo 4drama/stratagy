@@ -73,8 +73,8 @@ namespace order{
 		return new_;
 	}
 	
-	Subordinate::Subordinate(geometry::Point objectPosition)
-			:	Object(objectPosition){
+	Subordinate::Subordinate(const ObjectAttributes *attr)
+			:	Object(attr){
 		this->orders = CreateDefault();
 	}
 	
@@ -120,8 +120,8 @@ namespace order{
 				return order::STATUS::OUT_OF_DISTANCE;
 		}
 	}
-	
-	INFO Default::Check(Subordinate *current){
+
+	INFO Default::Check(Subordinate *current){		
 		if(Able_to_see *caretaker = dynamic_cast<Able_to_see*>(current)){
 			std::shared_ptr<Destructible_object> enemy = caretaker->FindEnemy();
 			if(enemy != nullptr){

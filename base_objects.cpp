@@ -1,22 +1,39 @@
 #include "base_objects.hpp"
+
 #include <utility>
 #include <map>
 
-Object::Object(Point coordinate_)
-		:	coordinate(coordinate_){	
+#include <iostream>
+
+ObjectAttributes* ObjectAttributes::setCoordinate(geometry::Point coordinate_){
+	coordinate = coordinate_;
+	return this;
+}
+
+Object::Object(const ObjectAttributes *attr)
+		:	coordinate(attr->coordinate){	
 }
 
 geometry::Point Object::CoordinateGet() const{
 	return coordinate;
 }
 
-void ObjectsRoster::Add(Object&& obj){
-	std::unique_ptr<Object> objPtr = std::make_unique<Object>(std::move(obj));	
-	roster.push_back(std::move(objPtr));
+void Object::Tick(float time){
 }
 
-Able_to_destroy::Able_to_destroy(geometry::Point coordinate_)
-		:	Object(coordinate_){	
+void ObjectsRoster::Add(std::unique_ptr<Object> obj){
+	roster.push_back(std::move(obj));
+}
+
+void ObjectsRoster::Tick(float time){
+	std::for_each(roster.begin(), roster.end(),[time]
+		(std::unique_ptr<Object> &obj){
+			obj->Tick(time);
+		});
+};
+
+Able_to_destroy::Able_to_destroy(const ObjectAttributes *attr)
+		:	Object(attr){
 	sharedObj = std::make_shared<Destructible_object>(this);
 }
 
@@ -44,8 +61,8 @@ void Object::CoordinateSet(Point newCoordinate){
 	coordinate = newCoordinate;
 }
 
-Able_to_see::Able_to_see(ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_)
-		:	Object(coordinate_), zone(zone_), visibilityRange(visibilityRange_){	
+Able_to_see::Able_to_see(const ObjectAttributes *attr)
+		:	Object(attr), zone(attr->zone), visibilityRange(attr->visibilityRange){	
 }
 
 double Able_to_see::getVisibilityRange() const{
@@ -67,14 +84,17 @@ std::shared_ptr<Destructible_object> Able_to_see::FindEnemy() const{
 	
 	zone->for_each(procedure);
 	auto nearest = all.lower_bound(0);
-	
+	if(nearest->second->getObject() == dynamic_cast<const Able_to_destroy*>(this))
+		nearest++;
+	std::cerr 	<< '(' << this->CoordinateGet().x << ',' << this->CoordinateGet().y << ')' 
+			<< " find distance:" << nearest->first << std::endl;
 	return nearest->second;
 }
 
-Able_to_move::Able_to_move(double speed_, ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_)
-		:	Object(coordinate_),
-			Able_to_see(zone_, visibilityRange_, coordinate_),
-			speed(speed_){
+Able_to_move::Able_to_move(const ObjectAttributes *attr)
+		:	Object(attr),
+			Able_to_see(attr),
+			speed(attr->speed){
 }
 
 double Able_to_move::getSpeed() const{
@@ -85,11 +105,10 @@ order::INFO Able_to_move::MoveUpdate(geometry::Point target){
 	//TO DO
 }
 
-Able_to_attack::Able_to_attack(	double attackRange_, ObjectsRoster *zone_,
-				double visibilityRange_, geometry::Point coordinate_)
-		:	Object(coordinate_),
-			Able_to_see(zone_, visibilityRange_, coordinate_),
-			attackRange(attackRange_){	
+Able_to_attack::Able_to_attack(const ObjectAttributes *attr)
+		:	Object(attr),
+			Able_to_see(attr),
+			attackRange(attr->attackRange){	
 }
 
 double Able_to_attack::getAttackRange() const{

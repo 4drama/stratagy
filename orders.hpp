@@ -24,7 +24,7 @@ namespace order{
 		void ReplaceOrders(std::list<Order_ptr> &&new_);
 	public:
 		Subordinate() = delete;
-		Subordinate(geometry::Point objectPosition);
+		Subordinate(const ObjectAttributes *attr);
 		Subordinate(const Subordinate&) = delete;
 		Subordinate(Subordinate&&) = default;
 		

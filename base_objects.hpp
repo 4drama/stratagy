@@ -17,7 +17,11 @@ struct ObjectAttributes{
 	double visibilityRange;
 	double speed;
 	double attackRange;
+	
+	ObjectAttributes* setCoordinate(geometry::Point coordinate_);
 };
+
+
 
 class Object{
 	using Point = geometry::Point;	
@@ -25,12 +29,14 @@ private:
 	Point coordinate;
 protected:
 	Object() = delete;
-	Object(Point coordinate_);
+	Object(const ObjectAttributes *attr);
 	
 public:
 	Point CoordinateGet() const;
 	void CoordinateSet(Point newCoordinate);
-	virtual ~Object() = default;
+	
+	virtual void Tick(float time);
+	virtual ~Object() = default; 
 };
 
 class ObjectsRoster{
@@ -38,8 +44,9 @@ private:
 	std::vector<std::unique_ptr<Object> > roster;
 public:
 
-	void Add(Object&& obj);
-		
+	void Add(std::unique_ptr<Object> obj);
+	
+	
 	template<typename F>
 	void for_each(F&& fun) const{		
 		std::for_each(roster.begin(), roster.end(),[fun]
@@ -47,6 +54,8 @@ public:
 			fun(obj);
 		});
 	}
+	
+	void Tick(float time);
 };
 
 class Destructible_object;
@@ -57,7 +66,7 @@ private:
 	int health;
 public:
 	Able_to_destroy() = delete;
-	Able_to_destroy(geometry::Point coordinate_);
+	Able_to_destroy(const ObjectAttributes *attr);
 	
 	std::shared_ptr<Destructible_object> getSharedObject() const;
 	~Able_to_destroy();
@@ -81,7 +90,7 @@ private:
 	double visibilityRange;
 public:
 	Able_to_see() = delete;
-	Able_to_see(ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_);
+	Able_to_see(const ObjectAttributes *attr);
 	
 	double getVisibilityRange() const;
 	
@@ -94,7 +103,7 @@ private:
 	geometry::Point actionPosition;
 public:
 	Able_to_move() = delete;
-	Able_to_move(double speed_,ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_);
+	Able_to_move(const ObjectAttributes *attr);
 	
 	double getSpeed() const;
 	
@@ -107,7 +116,7 @@ private:
 	std::shared_ptr<Destructible_object> actionTarget;
 public:
 	Able_to_attack() = delete;
-	Able_to_attack(double attackRange_, ObjectsRoster *zone_, double visibilityRange_, geometry::Point coordinate_);
+	Able_to_attack(const ObjectAttributes *attr);
 	
 	double getAttackRange() const;
 	

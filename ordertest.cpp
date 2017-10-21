@@ -2,6 +2,8 @@
 #include "orders.hpp"
 #include "geometry.hpp"
 
+#include <iostream>
+
 class Unit : 	virtual public Object, 
 		virtual public Able_to_see,
 		virtual public Able_to_attack,
@@ -11,24 +13,36 @@ class Unit : 	virtual public Object,
 private:
 	
 public:
-	Unit(		ObjectsRoster *zone_, double speed_, double attackRange_, 
-			double visibilityRange_, geometry::Point coordinate_)
-			:	Object(coordinate_),
-				Able_to_attack(attackRange_, zone_, visibilityRange_, coordinate_),
-				Able_to_move(speed_, zone_, visibilityRange_, coordinate_),
-				Able_to_destroy(coordinate_),
-				Able_to_see(zone_, visibilityRange_, coordinate_),
-				order::Subordinate(coordinate_){	
+	Unit(const ObjectAttributes *attr)
+			:	Object(attr),
+				Able_to_attack(attr),
+				Able_to_move(attr),
+				Able_to_destroy(attr),
+				Able_to_see(attr),
+				order::Subordinate(attr){	
+	}
+	
+	void Tick(float time) override{
+		order::Subordinate::Update();
 	}
 };
 
 int main(){
 	ObjectsRoster roster;
+	float time = 0.1;
 	
-	roster.Add(Unit(&roster, 1.5, 9, 12, geometry::Point{250, 250}));
-	roster.Add(Unit(&roster, 1.5, 9, 12, geometry::Point{260, 250}));
-	roster.Add(Unit(&roster, 1.5, 9, 12, geometry::Point{400, 250}));
-	roster.Add(Unit(&roster, 1.5, 9, 12, geometry::Point{200, 150}));
+	ObjectAttributes base;
+	base.zone		=	&roster;
+	base.visibilityRange	=	12;
+	base.speed		=	1.5;
+	base.attackRange	=	9;
+	
+	roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{215, 230})));
+	roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{280, 250})));
+	roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{260, 255})));
+	roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{265, 254})));
+	
+	roster.Tick(time);
 	
 	return 0;
 }
