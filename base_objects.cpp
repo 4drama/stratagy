@@ -3,6 +3,8 @@
 #include <utility>
 #include <map>
 
+#include <cassert>
+
 #include <iostream>
 
 ObjectAttributes* ObjectAttributes::setCoordinate(geometry::Point coordinate_){
@@ -113,6 +115,16 @@ Able_to_attack::Able_to_attack(const ObjectAttributes *attr)
 
 double Able_to_attack::getAttackRange() const{
 	return attackRange;
+}
+
+void Able_to_attack::setTarget(std::shared_ptr<Destructible_object> newTarget){
+	this->actionTarget = newTarget;
+	return;
+}
+
+std::shared_ptr<Destructible_object> Able_to_attack::getTarget() const{
+	assert(actionTarget != nullptr);
+	return actionTarget;
 }
 
 order::INFO Able_to_attack::AttackUpdate(std::shared_ptr<Destructible_object> target){

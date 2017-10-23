@@ -117,7 +117,7 @@ private:
 	double attackRange;
 	double attackDamage;
 	
-	std::shared_ptr<Destructible_object> actionTarget;
+	std::shared_ptr<Destructible_object> actionTarget = nullptr;
 public:
 	Able_to_attack() = delete;
 	Able_to_attack(const ObjectAttributes *attr);
@@ -125,8 +125,8 @@ public:
 	double getAttackRange() const;
 	
 	void Attack(float time){};
-	void setTarget(std::shared_ptr<Destructible_object> newTarget){};
-	std::shared_ptr<Destructible_object> getTarget(){};
+	void setTarget(std::shared_ptr<Destructible_object> newTarget);
+	std::shared_ptr<Destructible_object> getTarget() const;
 	order::INFO AttackUpdate(std::shared_ptr<Destructible_object> target);
 };
 

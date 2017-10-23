@@ -5,8 +5,8 @@ geom:
 	
 ord:
 	make -f order_subordinate.mak
-	make -f orders.mak
-	
+	make -f new_orders.mak
+
 testord:
 	make -f ordertest.mak
 	

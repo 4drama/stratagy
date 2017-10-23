@@ -11,7 +11,7 @@ namespace order{
 		std::list<Order_ptr> new_;
 		Attributes setting;
 		setting.firstPosition = this->CoordinateGet();
-		Order_ptr order = std::make_unique<Default>(std::move(setting));
+		Order_ptr order = std::make_unique<norder::Default>(std::move(setting));
 		new_.push_front(std::move(order));
 		return new_;
 	}
@@ -35,12 +35,15 @@ namespace order{
 	}
 	
 	void Subordinate::Update(float time){
-		order::INFO status = this->orders.front()->Check(this);
+		order::INFO status = this->orders.front()->Do(this, time);
 		
-		while(status != order::INFO::EXERCISE){
+		if(status == order::INFO::EXERCISE)
 			this->orders.pop_front();
-			status = this->orders.front()->Check(this);
-		}
+		
+	/*	while(status != order::INFO::EXERCISE){
+			this->orders.pop_front();
+			status = this->orders.front()->Do(this, time);
+		}*/
 	}
 //-------------------------------------------------------------------
 

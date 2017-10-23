@@ -2,16 +2,18 @@
 #define ORDER_SUBORDINATE__
 
 #include "base_objects.hpp"
-#include "orders.hpp"
+#include "new_orders.hpp"
 
 #include <list>
 #include <memory>
 
 struct ObjectAttributes;
 
-namespace order{
-	
+namespace norder{
 	class Order;
+}
+
+namespace order{
 	
 	struct Attributes{
 		using Point = geometry::Point;
@@ -21,7 +23,7 @@ namespace order{
 	};
 	
 	class Subordinate : virtual public Object{
-		using Order_ptr = std::unique_ptr<Order>;
+		using Order_ptr = std::unique_ptr<norder::Order>;
 	private:
 		std::list<Order_ptr> orders;
 		
