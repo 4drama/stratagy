@@ -107,12 +107,16 @@ public:
 	
 	double getSpeed() const;
 	
+	void Move(float time){};
 	order::INFO MoveUpdate(geometry::Point target);
 };
 
 class Able_to_attack : virtual public Object, virtual public Able_to_see {
 private:
+	double attackSpeed;
 	double attackRange;
+	double attackDamage;
+	
 	std::shared_ptr<Destructible_object> actionTarget;
 public:
 	Able_to_attack() = delete;
@@ -120,6 +124,9 @@ public:
 	
 	double getAttackRange() const;
 	
+	void Attack(float time){};
+	void setTarget(std::shared_ptr<Destructible_object> newTarget){};
+	std::shared_ptr<Destructible_object> getTarget(){};
 	order::INFO AttackUpdate(std::shared_ptr<Destructible_object> target);
 };
 

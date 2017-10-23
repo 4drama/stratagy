@@ -5,11 +5,11 @@
 #include <iostream>
 
 class Unit : 	virtual public Object, 
-		virtual public Able_to_see,
-		virtual public Able_to_attack,
-		virtual public Able_to_move,
-		virtual public Able_to_destroy,
-		virtual public order::Subordinate{
+				virtual public Able_to_see,
+				virtual public Able_to_attack,
+				virtual public Able_to_move,
+				virtual public Able_to_destroy,
+				virtual public order::Subordinate{
 private:
 	
 public:
@@ -23,7 +23,7 @@ public:
 	}
 	
 	void Tick(float time) override{
-		order::Subordinate::Update();
+		order::Subordinate::Update(time);
 	}
 };
 
