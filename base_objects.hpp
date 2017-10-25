@@ -127,7 +127,7 @@ public:
 	
 	double getSpeed() const;
 	
-	void Move(float time){};
+	void Move(float time);
 	order::INFO MoveUpdate(geometry::Point target);
 };
 

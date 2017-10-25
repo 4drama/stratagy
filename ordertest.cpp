@@ -65,7 +65,9 @@ int main(){
 		if(t_del < (t_new = std::chrono::high_resolution_clock::now())){
 			time = std::chrono::duration<float, std::milli>(t_new-t_old).count();
 			t_old = t_new;
-			
+			std::cout 	<< std::endl << std::endl 
+						<< std::endl << std::endl 
+						<< std::endl << std::endl;
 			roster.Tick(time);
 			std::cout << "Turn end. Delay: " << time << '.' << std::endl << std::endl;
 			

@@ -158,8 +158,16 @@ double Able_to_move::getSpeed() const{
 	return speed;
 }
 
+void Able_to_move::Move(float time){
+	using geometry::Shift;
+	
+	geometry::Point newPosition;
+	newPosition = Shift(this->CoordinateGet(), this->actionPosition, time/1000, this->speed);
+	this->CoordinateSet(newPosition);
+}
+
 order::INFO Able_to_move::MoveUpdate(geometry::Point target){
-	//TO DO
+	this->actionPosition = target;
 }
 
 Able_to_attack::Able_to_attack(const ObjectAttributes *attr)
