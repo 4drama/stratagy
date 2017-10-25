@@ -37,7 +37,7 @@ namespace order{
 	void Subordinate::Update(float time){
 		order::INFO status = this->orders.front()->Do(this, time);
 		
-		if(status == order::INFO::EXERCISE)
+		if(status != order::INFO::EXERCISE)
 			this->orders.pop_front();
 		
 	/*	while(status != order::INFO::EXERCISE){

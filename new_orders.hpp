@@ -34,6 +34,7 @@ namespace norder{
 		bool EnemyFind(order::Subordinate *current, float time);
 		bool EnemyPresence(order::Subordinate *current, float time);
 		bool AttackRangeOut(order::Subordinate *current, float time);
+		bool AttackRangeIn(order::Subordinate *current, float time);
 		bool FollowRangeOut(order::Subordinate *current, float time);
 		bool OnPosition(order::Subordinate *current, float time);
 		

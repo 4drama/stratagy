@@ -16,7 +16,9 @@ struct ObjectAttributes{
 	ObjectsRoster *zone;
 	double visibilityRange;
 	double speed;
+	double attackSpeed;
 	double attackRange;
+	double attackDamage;
 	
 	ObjectAttributes* setCoordinate(geometry::Point coordinate_);
 };
@@ -41,11 +43,14 @@ public:
 
 class ObjectsRoster{
 private:
+	std::vector<Object*> toErise;
 	std::vector<std::unique_ptr<Object> > roster;
+	
+	void Erase(Object* obj);
 public:
 
 	void Add(std::unique_ptr<Object> obj);
-	
+	void ToErase(Object* obj);
 	
 	template<typename F>
 	void for_each(F&& fun) const{		
@@ -60,13 +65,28 @@ public:
 
 class Destructible_object;
 
-class Able_to_destroy : virtual public Object {
+class Interacts_with_other{
+private:
+	ObjectsRoster *zone;
+public:
+	Interacts_with_other() = delete;
+	Interacts_with_other(const ObjectAttributes *attr);
+	
+	ObjectsRoster* getZone() const;
+};
+
+class Able_to_destroy : virtual public Object, virtual public Interacts_with_other{
 private:
 	std::shared_ptr<Destructible_object> sharedObj;
-	int health;
+	int maxHealth;
+	int currHealth;
 public:
 	Able_to_destroy() = delete;
 	Able_to_destroy(const ObjectAttributes *attr);
+	
+	int GetMaxHealth() const;
+	int GetCurrHealth() const;
+	void Damage(int damage);
 	
 	std::shared_ptr<Destructible_object> getSharedObject() const;
 	~Able_to_destroy();
@@ -84,9 +104,9 @@ public:
 	Able_to_destroy* getObject() const;
 };
 
-class Able_to_see : virtual public Object {
+class Able_to_see : virtual public Object, virtual public Interacts_with_other{
 private:
-	ObjectsRoster *zone;
+//	ObjectsRoster *zone;
 	double visibilityRange;
 public:
 	Able_to_see() = delete;
@@ -114,6 +134,7 @@ public:
 class Able_to_attack : virtual public Object, virtual public Able_to_see {
 private:
 	double attackSpeed;
+	double attackDelay;
 	double attackRange;
 	double attackDamage;
 	
@@ -124,7 +145,7 @@ public:
 	
 	double getAttackRange() const;
 	
-	void Attack(float time){};
+	void Attack(float time);
 	void setTarget(std::shared_ptr<Destructible_object> newTarget);
 	std::shared_ptr<Destructible_object> getTarget() const;
 	order::INFO AttackUpdate(std::shared_ptr<Destructible_object> target);
