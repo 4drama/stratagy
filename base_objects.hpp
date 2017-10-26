@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <map>
 
 class ObjectsRoster;
 
@@ -23,9 +24,20 @@ struct ObjectAttributes{
 	ObjectAttributes* setCoordinate(geometry::Point coordinate_);
 };
 
+class Able_to_attack;
+class Able_to_move;
+class Able_to_see;
+class Able_to_destroy;
 
+class ObjectCast{
+public:
+	virtual Able_to_attack* 	CanAttack();
+	virtual Able_to_move* 		CanMove();
+	virtual Able_to_see* 		CanSee();
+	virtual Able_to_destroy* 	CanDestroy();
+};
 
-class Object{
+class Object : virtual public ObjectCast{
 	using Point = geometry::Point;	
 private:	
 	Point coordinate;
@@ -44,19 +56,21 @@ public:
 class ObjectsRoster{
 private:
 	std::vector<Object*> toErise;
-	std::vector<std::unique_ptr<Object> > roster;
+	std::map<unsigned, std::unique_ptr<Object> > roster;
 	
 	void Erase(Object* obj);
 public:
 
-	void Add(std::unique_ptr<Object> obj);
+	unsigned Add(std::unique_ptr<Object> obj);
+	std::unique_ptr<Object>& operator[](unsigned id);
+	
 	void ToErase(Object* obj);
 	
 	template<typename F>
 	void for_each(F&& fun) const{		
 		std::for_each(roster.begin(), roster.end(),[fun]
-		(const std::unique_ptr<Object> &obj){
-			fun(obj);
+		(const std::pair<const unsigned, std::unique_ptr<Object> > &obj){
+			fun(obj.second);
 		});
 	}
 	
@@ -83,6 +97,7 @@ private:
 public:
 	Able_to_destroy() = delete;
 	Able_to_destroy(const ObjectAttributes *attr);
+	Able_to_destroy* CanDestroy() override;
 	
 	int GetMaxHealth() const;
 	int GetCurrHealth() const;
@@ -106,11 +121,11 @@ public:
 
 class Able_to_see : virtual public Object, virtual public Interacts_with_other{
 private:
-//	ObjectsRoster *zone;
 	double visibilityRange;
 public:
 	Able_to_see() = delete;
 	Able_to_see(const ObjectAttributes *attr);
+	Able_to_see* CanSee() override;
 	
 	double getVisibilityRange() const;
 	
@@ -124,6 +139,7 @@ private:
 public:
 	Able_to_move() = delete;
 	Able_to_move(const ObjectAttributes *attr);
+	Able_to_move* CanMove() override;
 	
 	double getSpeed() const;
 	
@@ -142,10 +158,13 @@ private:
 public:
 	Able_to_attack() = delete;
 	Able_to_attack(const ObjectAttributes *attr);
+	Able_to_attack* CanAttack() override;
 	
 	double getAttackRange() const;
 	
-	void Attack(float time);
+	order::INFO Attack(float time);
+	void AttackCancel();
+	
 	void setTarget(std::shared_ptr<Destructible_object> newTarget);
 	std::shared_ptr<Destructible_object> getTarget() const;
 	order::INFO AttackUpdate(std::shared_ptr<Destructible_object> target);

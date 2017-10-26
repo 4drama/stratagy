@@ -25,6 +25,7 @@ namespace norder{
 	private:
 		enum class STATE{
 			STAND,
+			TRY_ATTACK,
 			ATTACK,
 			FOLLOW,
 			GET_BACK
@@ -41,6 +42,22 @@ namespace norder{
 	public:
 	
 		Default(const order::Attributes&& entry);
+		
+		order::INFO Do(order::Subordinate *current, float time) override;
+		
+	};
+	
+	class Move : public Order{
+	private:
+		enum class STATE{
+			START,
+			MOVE
+		} 					state;
+		geometry::Point 	position;
+		
+		
+	public:
+		Move(const order::Attributes&& entry);
 		
 		order::INFO Do(order::Subordinate *current, float time) override;
 		

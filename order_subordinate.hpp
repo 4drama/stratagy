@@ -27,7 +27,8 @@ namespace order{
 	private:
 		std::list<Order_ptr> orders;
 		
-		std::list<Order_ptr> CreateDefault();
+		void AddDefault();
+		std::list<Order_ptr> CreateEmpty();
 		void ReplaceOrders(std::list<Order_ptr> &&new_);
 	public:
 		Subordinate() = delete;
@@ -36,7 +37,7 @@ namespace order{
 		Subordinate(Subordinate&&) = default;
 		
 		void AddOrder(Order_ptr &&next);
-		void NewOrders(Order_ptr &&new_);
+		void NewOrder(Order_ptr &&new_);
 		void ResetOrders();
 		
 		void Update(float time);

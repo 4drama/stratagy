@@ -16,13 +16,17 @@ namespace norder{
 
 	bool Default::EnemyFind(order::Subordinate *current, float time){
 		std::cerr << "Default::EnemyFind\n"; 
-		auto currSeeCast = dynamic_cast<Able_to_see*>(current);
-		std::shared_ptr<Destructible_object> enemy = currSeeCast->FindEnemy();		
+		Able_to_see* currSeeCast = current->CanSee();
+		std::shared_ptr<Destructible_object> enemy = currSeeCast->FindEnemy();
+		
+		if(enemy == nullptr)
+			return false;
+		
 		double distance = Range(enemy->getObject()->CoordinateGet(), current->CoordinateGet());
 		
 		if(distance <= currSeeCast->getVisibilityRange()){
-			dynamic_cast<Able_to_attack*>(current)->setTarget(enemy);
-			state = Default::STATE::ATTACK;
+			current->CanAttack()->setTarget(enemy);
+			state = Default::STATE::TRY_ATTACK;
 			this->Do(current, time);
 			return true;
 		} else
@@ -31,8 +35,8 @@ namespace norder{
 	
 	bool Default::EnemyPresence(order::Subordinate *current, float time){
 		std::cerr << "Default::EnemyPresence\n";
-		auto currAttackCast = dynamic_cast<Able_to_attack*>(current);
-		auto currMoveCast = dynamic_cast<Able_to_move*>(current);
+		Able_to_attack* currAttackCast = current->CanAttack();
+		Able_to_move* currMoveCast = current->CanMove();
 		
 		if(!currAttackCast->getTarget()->getLive()){
 			state = Default::STATE::GET_BACK;
@@ -45,8 +49,8 @@ namespace norder{
 	
 	bool Default::AttackRangeOut(order::Subordinate *current, float time){
 		std::cerr << "Default::AttackRangeOut\n";
-		auto currAttackCast = dynamic_cast<Able_to_attack*>(current);
-		auto currMoveCast = dynamic_cast<Able_to_move*>(current);
+		Able_to_attack* currAttackCast = current->CanAttack();
+		Able_to_move* currMoveCast = current->CanMove();
 		std::shared_ptr<Destructible_object> enemy = currAttackCast->getTarget();
 		double distance = Range(enemy->getObject()->CoordinateGet(), current->CoordinateGet());
 		
@@ -61,12 +65,12 @@ namespace norder{
 	
 	bool Default::AttackRangeIn(order::Subordinate *current, float time){
 		std::cerr << "Default::AttackRangeIn\n";
-		auto currAttackCast = dynamic_cast<Able_to_attack*>(current);
+		Able_to_attack* currAttackCast = current->CanAttack();
 		std::shared_ptr<Destructible_object> enemy = currAttackCast->getTarget();
 		double distance = Range(enemy->getObject()->CoordinateGet(), current->CoordinateGet());
 		
 		if(distance < currAttackCast->getAttackRange()){
-			state = Default::STATE::ATTACK;
+			state = Default::STATE::TRY_ATTACK;
 			this->Do(current, time);
 			return true;
 		} else
@@ -75,10 +79,10 @@ namespace norder{
 	
 	bool Default::FollowRangeOut(order::Subordinate *current, float time){
 		std::cerr << "Default::FollowRangeOut\n";
-		auto currAttackCast = dynamic_cast<Able_to_attack*>(current);
+		Able_to_attack* currAttackCast = current->CanAttack();
 		std::shared_ptr<Destructible_object> enemy = currAttackCast->getTarget();
 		double distance = Range(enemy->getObject()->CoordinateGet(), current->CoordinateGet());
-		auto currMoveCast = dynamic_cast<Able_to_move*>(current);
+		Able_to_move* currMoveCast = current->CanMove();
 		
 		if(distance > currAttackCast->getVisibilityRange()){						
 			state = Default::STATE::GET_BACK;
@@ -91,10 +95,8 @@ namespace norder{
 	
 	bool Default::OnPosition(order::Subordinate *current, float time){
 		std::cerr << "Default::OnPosition\n";
-//		auto currMoveCast = dynamic_cast<Able_to_move*>(current);
 		if(this->position == current->CoordinateGet()){
 			state = Default::STATE::STAND;
-//			currMoveCast->MoveUpdate(this->position);
 			this->Do(current, time);
 			return true;
 		} else {
@@ -112,15 +114,31 @@ namespace norder{
 				return INFO::EXERCISE;
 			return INFO::EXERCISE;
 			
-		} else if(state == Default::STATE::ATTACK){
-			std::cerr << "Default::STATE::ATTACK\n";
+		}else if(state == Default::STATE::TRY_ATTACK){
+			std::cerr << "Default::STATE::TRY_ATTACK\n";
 			if(EnemyPresence(current, time))
 				return INFO::EXERCISE;
 			if(AttackRangeOut(current, time))
 				return INFO::EXERCISE;
-			dynamic_cast<Able_to_attack*>(current)->Attack(time);
-			std::cerr << "Default::->Attack\n";
+			state = Default::STATE::ATTACK;
+			current->CanAttack()->AttackCancel();
+			this->Do(current, time);
 			return INFO::EXERCISE;
+			
+		} else if(state == Default::STATE::ATTACK){
+
+			if(EnemyPresence(current, time))
+				return INFO::EXERCISE;
+			
+			std::cerr << "Default::STATE::ATTACK\n";
+			order::INFO res = current->CanAttack()->Attack(time);
+			std::cerr << "Default::->Attack\n";
+			
+			if(res == order::INFO::IS_DONE){
+				state = Default::STATE::TRY_ATTACK;
+				return INFO::EXERCISE;
+			} else
+				return INFO::EXERCISE;
 			
 		} else if(state == Default::STATE::FOLLOW){
 			std::cerr << "Default::STATE::FOLLOW\n";
@@ -130,7 +148,7 @@ namespace norder{
 				return INFO::EXERCISE;
 			if(FollowRangeOut(current, time))
 				return INFO::EXERCISE;
-			dynamic_cast<Able_to_move*>(current)->Move(time);
+			current->CanMove()->Move(time);
 			std::cerr 	<< "Default::->Move to " << position.x << ',' << position.y 
 						<< " distance: " << geometry::Range(position, current->CoordinateGet()) 
 						<< std::endl;
@@ -145,12 +163,40 @@ namespace norder{
 			std::cerr 	<< "Default::->Move to " << position.x << ',' << position.y 
 						<< " distance: " << geometry::Range(position, current->CoordinateGet()) 
 						<< std::endl;
-			dynamic_cast<Able_to_move*>(current)->Move(time);
+			current->CanMove()->Move(time);
 			
 			return INFO::EXERCISE;
 		}
 	}
+	
 //-------------------------------------------------------------------
 
-	
+//================================ORDER_MOVE=========================
+	Move::Move(const order::Attributes&& entry)
+				:	position(entry.firstPosition), 
+					state(Move::STATE::START){		
+	}
+
+	order::INFO Move::Do(order::Subordinate *current, float time){
+		using order::INFO;
+		
+		if(state == Move::STATE::START){
+			std::cerr << "Move::STATE::START\n";
+			current->CanMove()->MoveUpdate(this->position);
+			state = Move::STATE::MOVE;
+			return this->Do(current, time);
+			
+		} else if(state == Move::STATE::MOVE){
+			std::cerr << "Move::STATE::MOVE\n";
+			std::cerr 	<< "Move::->Move to " << position.x << ',' << position.y 
+						<< " distance: " << geometry::Range(position, current->CoordinateGet()) 
+						<< std::endl;
+			current->CanMove()->Move(time);
+			if(current->CoordinateGet() == this->position)
+				return INFO::IS_DONE;
+			else 
+				return INFO::EXERCISE;
+		}
+	}
+//-------------------------------------------------------------------
 }

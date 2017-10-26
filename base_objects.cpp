@@ -24,14 +24,20 @@ geometry::Point Object::CoordinateGet() const{
 void Object::Tick(float time){
 }
 
-void ObjectsRoster::Add(std::unique_ptr<Object> obj){
-	roster.push_back(std::move(obj));
+unsigned ObjectsRoster::Add(std::unique_ptr<Object> obj){
+	static unsigned id = 0;
+	roster.emplace(id, std::move(obj));
+	return id++;
+}
+
+std::unique_ptr<Object>& ObjectsRoster::operator[](unsigned id){
+	return roster[id];
 }
 
 void ObjectsRoster::Erase(Object* objdel){
 	auto it = std::find_if(roster.begin(), roster.end(),
-				[objdel](std::unique_ptr<Object> &objcurr) -> bool{
-		if (objdel == objcurr.get())
+				[objdel](auto &objcurr) -> bool{
+		if (objdel == objcurr.second.get())
 			return true;
 		else
 			return false;
@@ -46,8 +52,8 @@ void ObjectsRoster::ToErase(Object* obj){
 
 void ObjectsRoster::Tick(float time){
 	std::for_each(roster.begin(), roster.end(),[time]
-		(std::unique_ptr<Object> &obj){
-			obj->Tick(time);
+		(auto &obj){
+			obj.second->Tick(time);
 		});
 	
 	std::for_each(toErise.begin(), toErise.end(),[this]
@@ -129,21 +135,26 @@ std::shared_ptr<Destructible_object> Able_to_see::FindEnemy() const{
 	std::map<double, std::shared_ptr<Destructible_object> > all;
 	//TO DO : NEED DIFFER ALLIED UNITS
 	auto procedure = [&all, this](const std::unique_ptr<Object> &other){
-		if(Able_to_destroy *current = dynamic_cast<Able_to_destroy*>(other.get())){
+		if(Able_to_destroy *current = other.get()->CanDestroy()){
 			double range = geometry::Range(this->CoordinateGet(), current->CoordinateGet());
 			std::shared_ptr<Destructible_object> ptr = current->getSharedObject();
 			all[range] = ptr;
 			return;
 		} else
 			return;
-	};	
+	};
 	
+
 	this->getZone()->for_each(procedure);
 	auto nearest = all.lower_bound(0);
+	
+	if(all.size() == 1)
+		return nullptr;
+	
 	if(nearest->second->getObject() == dynamic_cast<const Able_to_destroy*>(this))
 		nearest++;
 	std::cerr 	<< '(' << this->CoordinateGet().x << ',' << this->CoordinateGet().y << ')' 
-			<< " find distance:" << nearest->first << std::endl;
+			<< " find " << all.size() << " distance:" << nearest->first << std::endl;
 	return nearest->second;
 }
 
@@ -174,7 +185,7 @@ Able_to_attack::Able_to_attack(const ObjectAttributes *attr)
 		:	Object(attr),
 			Interacts_with_other(attr),
 			Able_to_see(attr),
-			attackSpeed(attr->attackSpeed),
+			attackSpeed(attr->attackSpeed * 1000),
 			attackDelay(0),
 			attackRange(attr->attackRange),
 			attackDamage(attr->attackDamage){	
@@ -184,22 +195,27 @@ double Able_to_attack::getAttackRange() const{
 	return attackRange;
 }
 
-void Able_to_attack::Attack(float time){
+order::INFO Able_to_attack::Attack(float time){
 	if (attackDelay >= attackSpeed){			//TODO reconsider delay
 		attackDelay = 0;	
 		if(actionTarget->getLive()){
 			actionTarget->getObject()->Damage(attackDamage);
+			return order::INFO::IS_DONE;
 		} else {
-			actionTarget = nullptr;
-			attackDelay = attackSpeed;
-			return;
+			this->AttackCancel();
+			this->actionTarget = nullptr;
+			return order::INFO::IMPOSSIBLY;
 		}
 	} else if(actionTarget != nullptr){
 		attackDelay += time;
-		return;
+		return order::INFO::EXERCISE;
 	} else {
 		
 	}
+}
+
+void Able_to_attack::AttackCancel(){
+	this->attackDelay = 0;
 }
 
 void Able_to_attack::setTarget(std::shared_ptr<Destructible_object> newTarget){
@@ -221,4 +237,36 @@ order::INFO Able_to_attack::AttackUpdate(std::shared_ptr<Destructible_object> ta
 		actionTarget = target;
 		return order::INFO::EXERCISE;
 	}
+}
+
+Able_to_attack* ObjectCast::CanAttack(){
+	return nullptr;
+}
+
+Able_to_move* ObjectCast::CanMove(){
+	return nullptr;
+}
+
+Able_to_see* ObjectCast::CanSee(){
+	return nullptr;
+}
+
+Able_to_destroy* ObjectCast::CanDestroy(){
+	return nullptr;
+}
+
+Able_to_attack* Able_to_attack::CanAttack(){
+	return this;
+}
+
+Able_to_move* Able_to_move::CanMove(){
+	return this;
+}
+
+Able_to_see* Able_to_see::CanSee(){
+	return this;
+}
+
+Able_to_destroy* Able_to_destroy::CanDestroy(){
+	return this;
 }

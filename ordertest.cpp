@@ -1,6 +1,7 @@
 #include "base_objects.hpp"
 #include "order_subordinate.hpp"
 #include "geometry.hpp"
+#include "new_orders.hpp"
 
 #include <iostream>
 #include <chrono>
@@ -45,15 +46,20 @@ int main(){
 	base.zone				=	&roster;
 	base.visibilityRange	=	20;
 	base.speed				=	1.5;
-	base.attackSpeed		=	3000;
+	base.attackSpeed		=	3;
 	base.attackRange		=	9;
 	base.attackDamage		=	75;
 	
-	roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{215, 230})));
-	roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{280, 250})));
-	roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{260, 255})));
-	roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{265, 254})));
+	unsigned unit1 = roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{215, 230})));
+	unsigned unit2 = roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{280, 250})));
+	unsigned unit3 = roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{260, 255})));
+	unsigned unit4 = roster.Add(std::make_unique<Unit>(base.setCoordinate(geometry::Point{265, 254})));
 	
+	order::Attributes ordAttr1;
+	ordAttr1.firstPosition = geometry::Point{280, 250};
+	std::unique_ptr<norder::Order> order1 = std::make_unique<norder::Move>(std::move(ordAttr1));
+	
+	dynamic_cast<Unit*>(roster[unit1].get())->NewOrder(std::move(order1));
 	
 	std::chrono::time_point<std::chrono::high_resolution_clock> t_old, t_new, t_del;
 	std::chrono::seconds time_delay(1);
@@ -66,7 +72,6 @@ int main(){
 			time = std::chrono::duration<float, std::milli>(t_new-t_old).count();
 			t_old = t_new;
 			std::cout 	<< std::endl << std::endl 
-						<< std::endl << std::endl 
 						<< std::endl << std::endl;
 			roster.Tick(time);
 			std::cout << "Turn end. Delay: " << time << '.' << std::endl << std::endl;
