@@ -17,6 +17,9 @@ namespace norder{
 	bool Default::EnemyFind(order::Subordinate *current, float time){
 		std::cerr << "Default::EnemyFind\n"; 
 		Able_to_see* currSeeCast = current->CanSee();
+		if(currSeeCast == nullptr)
+			return false;
+		
 		std::shared_ptr<Destructible_object> enemy = currSeeCast->FindEnemy();
 		
 		if(enemy == nullptr)
@@ -37,6 +40,8 @@ namespace norder{
 		std::cerr << "Default::EnemyPresence\n";
 		Able_to_attack* currAttackCast = current->CanAttack();
 		Able_to_move* currMoveCast = current->CanMove();
+		if((currAttackCast == nullptr) ||(currMoveCast == nullptr))
+			return false;
 		
 		if(!currAttackCast->getTarget()->getLive()){
 			state = Default::STATE::GET_BACK;
@@ -51,6 +56,9 @@ namespace norder{
 		std::cerr << "Default::AttackRangeOut\n";
 		Able_to_attack* currAttackCast = current->CanAttack();
 		Able_to_move* currMoveCast = current->CanMove();
+		if((currAttackCast == nullptr) ||(currMoveCast == nullptr))
+			return false;
+		
 		std::shared_ptr<Destructible_object> enemy = currAttackCast->getTarget();
 		double distance = Range(enemy->getObject()->CoordinateGet(), current->CoordinateGet());
 		
@@ -66,6 +74,9 @@ namespace norder{
 	bool Default::AttackRangeIn(order::Subordinate *current, float time){
 		std::cerr << "Default::AttackRangeIn\n";
 		Able_to_attack* currAttackCast = current->CanAttack();
+		if(currAttackCast == nullptr)
+			return false;
+		
 		std::shared_ptr<Destructible_object> enemy = currAttackCast->getTarget();
 		double distance = Range(enemy->getObject()->CoordinateGet(), current->CoordinateGet());
 		
@@ -80,9 +91,13 @@ namespace norder{
 	bool Default::FollowRangeOut(order::Subordinate *current, float time){
 		std::cerr << "Default::FollowRangeOut\n";
 		Able_to_attack* currAttackCast = current->CanAttack();
+		Able_to_move* currMoveCast = current->CanMove();
+		
+		if((currAttackCast == nullptr) ||(currMoveCast == nullptr))
+			return false;
+		
 		std::shared_ptr<Destructible_object> enemy = currAttackCast->getTarget();
 		double distance = Range(enemy->getObject()->CoordinateGet(), current->CoordinateGet());
-		Able_to_move* currMoveCast = current->CanMove();
 		
 		if(distance > currAttackCast->getVisibilityRange()){						
 			state = Default::STATE::GET_BACK;
@@ -182,7 +197,11 @@ namespace norder{
 		
 		if(state == Move::STATE::START){
 			std::cerr << "Move::STATE::START\n";
-			current->CanMove()->MoveUpdate(this->position);
+			Able_to_move* currMoveCast = current->CanMove();
+			if(currMoveCast == nullptr)
+				return INFO::IMPOSSIBLY;
+			
+			currMoveCast->MoveUpdate(this->position);
 			state = Move::STATE::MOVE;
 			return this->Do(current, time);
 			
