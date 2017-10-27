@@ -12,16 +12,20 @@
 class ObjectsRoster;
 
 struct ObjectAttributes{
-	geometry::Point coordinate;
-	int health;
-	ObjectsRoster *zone;
-	double visibilityRange;
-	double speed;
-	double attackSpeed;
-	double attackRange;
-	double attackDamage;
+	using Point = geometry::Point;
 	
-	ObjectAttributes* setCoordinate(geometry::Point coordinate_);
+	Point 			coordinate;
+	int 			health;
+	ObjectsRoster 	*zone;
+	double			visibilityRange;
+	double			speed;
+	double			attackSpeed;
+	double			attackRange;
+	double			attackDamage;
+	int 			owner = 0;
+	
+	ObjectAttributes& setCoordinate(geometry::Point coordinate_);
+	ObjectAttributes& setOwner(int owner_);
 };
 
 class Able_to_attack;
@@ -41,6 +45,7 @@ class Object : virtual public ObjectCast{
 	using Point = geometry::Point;	
 private:	
 	Point coordinate;
+	int owner;
 protected:
 	Object() = delete;
 	Object(const ObjectAttributes *attr);
@@ -48,6 +53,9 @@ protected:
 public:
 	Point CoordinateGet() const;
 	void CoordinateSet(Point newCoordinate);
+	
+	int OwnerGet() const;
+	void OwnerSet(int owner_);
 	
 	virtual void Tick(float time);
 	virtual ~Object() = default; 

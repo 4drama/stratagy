@@ -8,17 +8,31 @@
 
 #include <iostream>
 
-ObjectAttributes* ObjectAttributes::setCoordinate(geometry::Point coordinate_){
+ObjectAttributes& ObjectAttributes::setCoordinate(geometry::Point coordinate_){
 	coordinate = coordinate_;
-	return this;
+	return *this;
+}
+
+ObjectAttributes& ObjectAttributes::setOwner(int owner_){
+	owner = owner_;
+	return *this;
 }
 
 Object::Object(const ObjectAttributes *attr)
-		:	coordinate(attr->coordinate){	
+		:	coordinate(attr->coordinate),
+			owner(attr->owner){	
 }
 
 geometry::Point Object::CoordinateGet() const{
 	return coordinate;
+}
+
+int Object::OwnerGet() const{
+	return this->owner;
+}
+
+void Object::OwnerSet(int owner_){
+	this->owner = owner_;
 }
 
 void Object::Tick(float time){
@@ -133,9 +147,14 @@ double Able_to_see::getVisibilityRange() const{
 
 std::shared_ptr<Destructible_object> Able_to_see::FindEnemy() const{
 	std::map<double, std::shared_ptr<Destructible_object> > all;
+	int thisOwner = this->OwnerGet();
 	//TO DO : NEED DIFFER ALLIED UNITS
-	auto procedure = [&all, this](const std::unique_ptr<Object> &other){
-		if(Able_to_destroy *current = other.get()->CanDestroy()){
+	auto procedure = [&all, this, thisOwner](const std::unique_ptr<Object> &other){
+		Able_to_destroy *current = other.get()->CanDestroy();
+		int otherOwner = other->OwnerGet();
+		if(		(current != nullptr) 
+			&&	(thisOwner != otherOwner) 
+			&&	(otherOwner != 0)	){
 			double range = geometry::Range(this->CoordinateGet(), current->CoordinateGet());
 			std::shared_ptr<Destructible_object> ptr = current->getSharedObject();
 			all[range] = ptr;
@@ -148,7 +167,7 @@ std::shared_ptr<Destructible_object> Able_to_see::FindEnemy() const{
 	this->getZone()->for_each(procedure);
 	auto nearest = all.lower_bound(0);
 	
-	if(all.size() == 1)
+	if(all.empty())
 		return nullptr;
 	
 	if(nearest->second->getObject() == dynamic_cast<const Able_to_destroy*>(this))
