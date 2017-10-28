@@ -39,6 +39,17 @@ public:
 	}
 };
 
+template<typename T>
+std::unique_ptr<norder::Order> MakeOrder(order::Attributes&& atr){
+	return std::make_unique<T>(std::move(atr));
+}
+
+order::Attributes OrderPosition(double x, double y){
+	order::Attributes res;
+	res.firstPosition = geometry::Point{x, y};
+	return res;
+}
+
 int main(){
 	ObjectsRoster roster;
 	
@@ -61,8 +72,10 @@ int main(){
 					
 	unsigned unit3 = roster.Add(std::make_unique<Unit>
 			(&base	.setCoordinate(geometry::Point{260, 255})
-					.setOwner(2)));
-					
+					.setOwner(2).setHealth(550)));
+	
+	base.health				=	250;
+	
 	unsigned unit4 = roster.Add(std::make_unique<Unit>
 			(&base	.setCoordinate(geometry::Point{265, 254})
 					.setOwner(2)));
@@ -71,22 +84,20 @@ int main(){
 			(&base	.setCoordinate(geometry::Point{290, 260})
 					.setOwner(1)));
 	
-	order::Attributes ordAttr1;
-	ordAttr1.firstPosition = geometry::Point{235, 230};
+	dynamic_cast<Unit*>(roster[unit1].get())
+			->NewOrder(MakeOrder<norder::Move>(OrderPosition(235, 230)));
+			
+	dynamic_cast<Unit*>(roster[unit1].get())
+			->AddOrder(MakeOrder<norder::Move>(OrderPosition(273, 245)));
 	
-	order::Attributes ordAttr2;
-	ordAttr2.firstPosition = geometry::Point{273, 245};
+	dynamic_cast<Unit*>(roster[unit2].get())
+			->NewOrder(MakeOrder<norder::Hold>(order::Attributes{}));
 	
-	order::Attributes ordAttr3;
-	ordAttr3.firstPosition = geometry::Point{285, 255};
+	dynamic_cast<Unit*>(roster[unit3].get())
+			->NewOrder(MakeOrder<norder::Patrol>(OrderPosition(270, 270)));
 	
-	std::unique_ptr<norder::Order> order1 = std::make_unique<norder::Move>(std::move(ordAttr1));
-	std::unique_ptr<norder::Order> order2 = std::make_unique<norder::Move>(std::move(ordAttr2));
-	std::unique_ptr<norder::Order> order3 = std::make_unique<norder::Move>(std::move(ordAttr3));
-	
-	dynamic_cast<Unit*>(roster[unit1].get())->NewOrder(std::move(order1));
-	dynamic_cast<Unit*>(roster[unit1].get())->AddOrder(std::move(order2));
-	dynamic_cast<Unit*>(roster[unit5].get())->NewOrder(std::move(order3));
+	dynamic_cast<Unit*>(roster[unit5].get())
+			->NewOrder(MakeOrder<norder::Move>(OrderPosition(285, 255)));
 	
 	std::chrono::time_point<std::chrono::high_resolution_clock> t_old, t_new, t_del;
 	std::chrono::seconds time_delay(1);

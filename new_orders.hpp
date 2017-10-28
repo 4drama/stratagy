@@ -62,6 +62,72 @@ namespace norder{
 		order::INFO Do(order::Subordinate *current, float time) override;
 		
 	};
+	
+	class Hold : public Order{
+	private:
+		enum class STATE{
+			START,
+			STAND,
+			TRY_ATTACK,
+			ATTACK
+		}					state;
+		geometry::Point 	position;
+		
+		bool EnemyFind(order::Subordinate *current, float time);
+		bool EnemyPresence(order::Subordinate *current, float time);
+		bool AttackRangeOut(order::Subordinate *current, float time);
+		
+	public:
+		Hold(const order::Attributes&& entry);
+		
+		order::INFO Do(order::Subordinate *current, float time) override;
+	};
+	
+	class Patrol : public Order{
+	private:
+		enum class STATE{
+			START,
+			MOVE,
+			TRY_ATTACK,
+			ATTACK,
+			FOLLOW,
+			GET_BACK
+		}					state;
+		geometry::Point 	firstPosition;
+		geometry::Point 	secondPosition;
+		geometry::Point 	onPathPosition;
+		geometry::Point		*currentPath;	
+		
+		void SwithPath();
+		
+		bool EnemyFind(order::Subordinate *current, float time);
+		bool CheckPath(order::Subordinate *current, float time);
+		
+		bool EnemyPresence(order::Subordinate *current, float time);
+		bool AttackRangeOut(order::Subordinate *current, float time);
+		
+		bool AttackRangeIn(order::Subordinate *current, float time);
+		bool ToFar(order::Subordinate *current, float time);
+		
+		bool ReturnedToPosition(order::Subordinate *current, float time);
+		
+	public:
+		Patrol(const order::Attributes&& entry);
+		
+		order::INFO Do(order::Subordinate *current, float time) override;
+	};
+	
+	class AttackMove : public Order{
+	private:
+		enum class STATE{
+			
+		}					state;
+		geometry::Point 	position;
+	public:
+		AttackMove(const order::Attributes&& entry);
+		
+		order::INFO Do(order::Subordinate *current, float time) override;
+	};
 }
 
 #endif

@@ -18,6 +18,11 @@ ObjectAttributes& ObjectAttributes::setOwner(int owner_){
 	return *this;
 }
 
+ObjectAttributes& ObjectAttributes::setHealth(int health_){
+	health = health_;
+	return *this;
+}
+
 Object::Object(const ObjectAttributes *attr)
 		:	coordinate(attr->coordinate),
 			owner(attr->owner){	

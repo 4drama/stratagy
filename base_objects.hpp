@@ -26,6 +26,7 @@ struct ObjectAttributes{
 	
 	ObjectAttributes& setCoordinate(geometry::Point coordinate_);
 	ObjectAttributes& setOwner(int owner_);
+	ObjectAttributes& setHealth(int health_);
 };
 
 class Able_to_attack;
